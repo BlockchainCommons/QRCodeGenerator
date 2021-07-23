@@ -37,6 +37,16 @@
 
 import Foundation
 
+#if canImport(AppKit)
+import AppKit
+#elseif canImport(UIKit)
+import UIKit
+#endif
+
+#if canImport(SwiftUI)
+import SwiftUI
+#endif
+
 /**
  * A QR Code symbol, which is a type of two-dimension barcode.
  * Invented by Denso Wave and described in the ISO/IEC 18004 standard.
@@ -103,7 +113,7 @@ public struct QRCode {
     }
     
     #if canImport(AppKit) || canImport(UIKit)
-    func makeImage(border: Int = 1, moduleSize: Int = 1, foregroundColor: OSColor = .black, backgroundColor: OSColor = .white) -> OSImage {
+    public func makeImage(border: Int = 3, moduleSize: Int = 1, foregroundColor: OSColor = .black, backgroundColor: OSColor = .white) -> OSImage {
         let fullSize = size + 2 * border
         let scaledSize = fullSize * moduleSize
         let canvas = Canvas(size: IntSize(width: scaledSize, height: scaledSize))
@@ -119,22 +129,22 @@ public struct QRCode {
         }
         return canvas.image
     }
+    
+    #if canImport(SwiftUI)
+    #if canImport(AppKit)
+    @available(macOS 10.15, *)
+    public func image(border: Int = 3, moduleSize: Int = 1, foregroundColor: OSColor = .black, backgroundColor: OSColor = .white) -> Image {
+        Image(nsImage: makeImage(border: border, moduleSize: moduleSize, foregroundColor: foregroundColor, backgroundColor: backgroundColor)).interpolation(.none)
+    }
+    #elseif canImport(UIKit)
+    @available(iOS 13.0, *)
+    public func image(border: Int = 3, moduleSize: Int = 1, foregroundColor: OSColor = .black, backgroundColor: OSColor = .white) -> Image {
+        Image(uiImage: makeImage(border: border, moduleSize: moduleSize, foregroundColor: foregroundColor, backgroundColor: backgroundColor)).interpolation(.none)
+    }
+    #endif
     #endif
     
-    // MARK: - Public helper enumeration
-    
-    public enum CorrectionLevel: Int {
-        case low        // The QR Code can tolerate about  7% erroneous codewords
-        case medium     // The QR Code can tolerate about 15% erroneous codewords
-        case quartile   // The QR Code can tolerate about 25% erroneous codewords
-        case high       // The QR Code can tolerate about 30% erroneous codewords
-        
-        var formatBits: Int {
-            Self._formatBits[rawValue]
-        }
-        
-        private static let _formatBits = [1, 0, 3, 2]
-    }
+    #endif
     
     // MARK: - Static factory functions (high level)
     
