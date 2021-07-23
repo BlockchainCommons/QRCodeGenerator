@@ -1,16 +1,19 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
 # Contributor License Agreement
 
 Version 1.0
 
-Name: `$name`
+Name: Wolf McNally
 
-E-Mail: `$email`
+E-Mail: wolf@wolfmcnally.com
 
 Legal Jurisdiction: Wyoming, United States of America
 
 Project: https://github.com/BlockchainCommons/QRCodeGenerator
 
-Date: `$date`
+Date: July 23, 2021
 
 ## Purpose
 
@@ -49,7 +52,19 @@ I promise not to offer contributions that contain or depend on the work of other
 ## Disclaimers
 
 ***As far as the law allows, my contributions come as is, without any warranty or condition.  Other than under [Copyright Guarantee](#copyright-guarantee), [Patent Guarantee](#patent-guarantee), or [Open Source Guarantee](#open-source-guarantee), I will not be liable to anyone for any damages related to my contributions or this contributor license agreement, under any kind of legal claim.***
+-----BEGIN PGP SIGNATURE-----
 
----
-
-To sign this Contributor License Agreement, fill in `$name`, `$email`, and `$date` above. Then sign using GPG using the following command `gpg --armor --clearsign --output ./CLA-signed/CLA.YOURGITHUBNAME.YOURGPGFINGERPRINT.md CLA.md`, then either submit your signed Contributor License Agreement to this repo as a GPG signed Pull Request or email it to [ChristopherA@BlockchainCommons.com](mailto:ChristopherA@BlockchainCommons.com).
+iQIzBAEBCAAdFiEElDZS7jhEF2DD3DU2S2wvz4lHgK4FAmD6c8oACgkQS2wvz4lH
+gK44Dw//ce+I6E6TwPuF+dCYst7OjLTJfik8sRu3rYoLd9B1qMc4OXLf0teT3WoO
+wsKgZKlhsdxT5+kFUqN5BxJKFI+GSa2jlPMLk+1ejx93rBry/JakWBPPvBUgPQou
+HrlTwy/jR50fnGDCf6EWFSbfzCWUEe9j5r9dgCY//OQGjrCFJ/npGWgAuVfYfUwY
+YnCALm5AWIicdJSbPS58r9IhFKgkIZJEqXVr488CmjoDSrFWWv/KLwypmrFo7Ytz
+rzEX5E7LyHKkVqV88zgcFopHkyxnbUYISzGWCVOyeJQuI8fKdgtr542/GstebXZ/
+Yczq9cVgOKdpp5lrDQunC77utpYsYIiooSQKV7TGw+byoMms5kyBB6khJlUL/TZi
+5CGQqaEYcADzWYx2tL6ktPeV6Um8u8HJvrzOmXyR5f/aV1eHz4+uatjvpCW9hH++
+LGqMTnE+28IoKfMxcocGQt/0nqwTTOvoAXlSgQuCEsJSeKk8Edc/l6wKB4OJBQmU
+6Eewdr4ldZhFlvb2yaPC9607Vl9f/Z3/9aQQ6Z5AIMWO3eDJhYubvs2BFfo29i2k
+XU91vENdY6oul3KFoU4xBxp8uy1ykfNYOWCHVVngz3HdL6YREF/9P5C2FIj8Y06M
+y+rNiY4xVTMDIQrWlSHMPUUO5p6Ze+Z4cpLdZm9R4BzAhVcRUAU=
+=90se
+-----END PGP SIGNATURE-----
