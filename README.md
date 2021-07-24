@@ -4,6 +4,8 @@
 
 QRCodeGenerator is a pure Swift translation of the [Project Nayuki QR code generator library](https://www.nayuki.io/page/qr-code-generator-library). Unlike Apple's built-in APIs for QR code generation, this package allows more sophisticated and tuneable encoding techniques that produce more compact QR codes in certain circumstances. See the unit tests for examples.
 
+See the [QRCodeGeneratorDemo](https://github.com/BlockchainCommons/QRCodeGeneratorDemo) repo for an iOS app that demonstrates this library.
+
 ## Status - Late Alpha
 
 QRCodeGenerator is a translation of the [Project Nayuki QR Code generator library](https://www.nayuki.io/page/qr-code-generator-library), and while the original source has been released and tested for years, this translation is new. Its unit tests verify that it produces the exact same QR codes as those produced in the original source demo app.
