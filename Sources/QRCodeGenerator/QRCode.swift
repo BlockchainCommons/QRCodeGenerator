@@ -7,33 +7,10 @@
 //
 //  Created by Wolf McNally on 7/20/21.
 //
-
+//  Based on: QR Code generator library (C++)
+//  Copyright (c) Project Nayuki. (MIT License)
+//  https://www.nayuki.io/page/qr-code-generator-library
 //
-// This code is based on the Project Nayuki QR Code generator library (C++)
-//
-
-/*
- * QR Code generator library (C++)
- *
- * Copyright (c) Project Nayuki. (MIT License)
- * https://www.nayuki.io/page/qr-code-generator-library
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- * - The above copyright notice and this permission notice shall be included in
- *   all copies or substantial portions of the Software.
- * - The Software is provided "as is", without warranty of any kind, express or
- *   implied, including but not limited to the warranties of merchantability,
- *   fitness for a particular purpose and noninfringement. In no event shall the
- *   authors or copyright holders be liable for any claim, damages or other
- *   liability, whether in an action of contract, tort or otherwise, arising from,
- *   out of or in connection with the Software or the use or other dealings in the
- *   Software.
- */
 
 import Foundation
 
@@ -265,7 +242,7 @@ public struct QRCode {
         guard (-1...7).contains(msk) else {
             throw QRError.invalidMask
         }
-        self.size = version * 4 + 17;
+        self.size = version * 4 + 17
         self.modules = [[Bool]](repeating: [Bool](repeating: false, count: size), count: size)  // Initially all white
         self.isFunction = [[Bool]](repeating: [Bool](repeating: false, count: size), count: size)
         
@@ -277,7 +254,7 @@ public struct QRCode {
         // Do masking
         var msk = msk
         if msk == -1 {  // Automatically choose best mask
-            var minPenalty = Int.max;
+            var minPenalty = Int.max
             for i in 0 ..< 8 {
                 applyMask(i)
                 drawFormatBits(i)
@@ -303,14 +280,14 @@ public struct QRCode {
     private mutating func drawFunctionPatterns() {
         // Draw horizontal and vertical timing patterns
         for i in 0 ..< size {
-            setFunctionModule(6, i, i % 2 == 0);
-            setFunctionModule(i, 6, i % 2 == 0);
+            setFunctionModule(6, i, i % 2 == 0)
+            setFunctionModule(i, 6, i % 2 == 0)
         }
         
         // Draw 3 finder patterns (all corners except bottom right; overwrites some timing modules)
-        drawFinderPattern(3, 3);
-        drawFinderPattern(size - 4, 3);
-        drawFinderPattern(3, size - 4);
+        drawFinderPattern(3, 3)
+        drawFinderPattern(size - 4, 3)
+        drawFinderPattern(3, size - 4)
         
         // Draw numerous alignment patterns
         let alignPatPos = getAlignmentPatternPositions()
@@ -319,14 +296,14 @@ public struct QRCode {
             for j in 0 ..< numAlign {
                 // Don't draw on the three finder corners
                 if (!((i == 0 && j == 0) || (i == 0 && j == numAlign - 1) || (i == numAlign - 1 && j == 0))) {
-                    drawAlignmentPattern(alignPatPos[i], alignPatPos[j]);
+                    drawAlignmentPattern(alignPatPos[i], alignPatPos[j])
                 }
             }
         }
         
         // Draw configuration data
-        drawFormatBits(0);  // Dummy mask value; overwritten later in the constructor
-        drawVersion();
+        drawFormatBits(0)  // Dummy mask value; overwritten later in the constructor
+        drawVersion()
     }
     
     /// Draws two copies of the format bits (with its own error correction code)
@@ -359,7 +336,7 @@ public struct QRCode {
         for i in 8 ..< 15 {
             setFunctionModule(8, size - 15 + i, Self.getBit(bits, i))
         }
-        setFunctionModule(8, size - 8, true);  // Always black
+        setFunctionModule(8, size - 8, true)  // Always black
     }
     
     
@@ -375,7 +352,7 @@ public struct QRCode {
         for _ in 0 ..< 12 {
             rem = (rem << 1) ^ ((rem >> 11) * 0x1F25)
         }
-        let bits = version << 12 | rem;  // uint18
+        let bits = version << 12 | rem  // uint18
         precondition(bits >> 18 == 0)
         
         // Draw two copies
@@ -383,8 +360,8 @@ public struct QRCode {
             let bit = Self.getBit(bits, i)
             let a = size - 11 + i % 3
             let b = i / 3
-            setFunctionModule(a, b, bit);
-            setFunctionModule(b, a, bit);
+            setFunctionModule(a, b, bit)
+            setFunctionModule(b, a, bit)
         }
     }
     
@@ -484,7 +461,7 @@ public struct QRCode {
             for vert in 0 ..< size {  // Vertical counter
                 for j in 0 ..< 2 {
                     let x = right - j  // Actual x coordinate
-                    let upward = ((right + 1) & 2) == 0;
+                    let upward = ((right + 1) & 2) == 0
                     let y = upward ? size - 1 - vert : vert  // Actual y coordinate
                     if !isFunction[y][x] && i < data.count * 8 {
                         modules[y][x] = Self.getBit(Int(data[i >> 3]), 7 - (i & 7))
@@ -550,7 +527,7 @@ public struct QRCode {
                     if runX == 5 {
                         result += Self.penaltyN1
                     } else if runX > 5 {
-                        result += 1;
+                        result += 1
                     }
                 } else {
                     finderPenaltyAddHistory(runX, &runHistory)
@@ -572,20 +549,20 @@ public struct QRCode {
                 if module(x, y) == runColor {
                     runY += 1
                     if runY == 5 {
-                        result += Self.penaltyN1;
+                        result += Self.penaltyN1
                     } else if runY > 5 {
                         result += 1
                     }
                 } else {
-                    finderPenaltyAddHistory(runY, &runHistory);
+                    finderPenaltyAddHistory(runY, &runHistory)
                     if !runColor {
-                        result += finderPenaltyCountPatterns(&runHistory) * Self.penaltyN3;
+                        result += finderPenaltyCountPatterns(&runHistory) * Self.penaltyN3
                     }
                     runColor = module(x, y)
                     runY = 1
                 }
             }
-            result += finderPenaltyTerminateAndCount(runColor, runY, &runHistory) * Self.penaltyN3;
+            result += finderPenaltyTerminateAndCount(runColor, runY, &runHistory) * Self.penaltyN3
         }
         
         // 2*2 blocks of modules having same color
@@ -609,7 +586,7 @@ public struct QRCode {
                 }
             }
         }
-        let total = size * size;  // Note that size is odd, so black/total != 1/2
+        let total = size * size  // Note that size is odd, so black/total != 1/2
         // Compute the smallest integer k >= 0 such that (45-5k)% <= black/total <= (55+5k)%
         let k = ((abs(black * 20 - total * 10) + total - 1) / total) - 1
         result += k * Self.penaltyN4
@@ -626,9 +603,9 @@ public struct QRCode {
             return []
         }
         
-        let numAlign = version / 7 + 2;
+        let numAlign = version / 7 + 2
         let step = (version == 32) ? 26 :
-            (version * 4 + numAlign * 2 + 1) / (numAlign * 2 - 2) * 2;
+            (version * 4 + numAlign * 2 + 1) / (numAlign * 2 - 2) * 2
         var result: [Int] = []
         var pos = size - 7
         for _ in 0 ..< (numAlign - 1) {
@@ -653,7 +630,7 @@ public struct QRCode {
             }
         }
         precondition((208...29648).contains(result))
-        return result;
+        return result
     }
     
     /// Returns the number of 8-bit data (i.e. not error correction) codewords contained in any
@@ -662,7 +639,7 @@ public struct QRCode {
     private static func getNumDataCodewords(_ ver: Int, _ ecl: CorrectionLevel) -> Int {
         getNumRawDataModules(ver) / 8
             - eccCodewordsPerBlock[ecl.rawValue][ver]
-            * numErrorCorrectionBlocks[ecl.rawValue][ver];
+            * numErrorCorrectionBlocks[ecl.rawValue][ver]
     }
     
     /// Returns a Reed-Solomon ECC generator polynomial for the given degree. This could be
@@ -688,7 +665,7 @@ public struct QRCode {
             }
             root = reedSolomonMultiply(root, 0x02)
         }
-        return result;
+        return result
     }
     
     /// Returns the Reed-Solomon error correction codeword for the given data and divisor polynomials.
@@ -709,13 +686,13 @@ public struct QRCode {
     /// All inputs are valid. This could be implemented as a 256*256 lookup table.
     private static func reedSolomonMultiply(_ x: UInt8, _ y: UInt8) -> UInt8 {
         // Russian peasant multiplication
-        var z = 0;
+        var z = 0
         for i in (0...7).reversed() {
             z = (z << 1) ^ ((z >> 7) * 0x11D)
             z ^= ((Int(y) >> i) & 1) * Int(x)
         }
         precondition(z >> 8 == 0)
-        return UInt8(z);
+        return UInt8(z)
     }
     
     /// Can only be called immediately after a white run is added, and

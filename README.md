@@ -8,7 +8,7 @@ See the [QRCodeGeneratorDemo](https://github.com/BlockchainCommons/QRCodeGenerat
 
 ## Status - Late Alpha
 
-QRCodeGenerator is a translation of the [Project Nayuki QR Code generator library](https://www.nayuki.io/page/qr-code-generator-library), and while the original source has been released and tested for years, this translation is new. Its unit tests verify that it produces the exact same QR codes as those produced in the original source demo app.
+QRCodeGenerator is a translation of the [Nayuki's library](https://www.nayuki.io/page/qr-code-generator-library), and while the original source has been released and tested for years, this translation is new. Its unit tests verify that it produces the exact same QR codes as those produced in the original source demo app.
 
 ## Prerequisites
 
@@ -59,7 +59,7 @@ This  QRCodeGenerator project is either derived from or was inspired by:
 
 * The [Project Nayuki QR Code generator library](https://www.nayuki.io/page/qr-code-generator-library)
 
-While this project does not include any actual source code from the [Project Nayuki QR Code generator library](https://www.nayuki.io/page/qr-code-generator-library), it is closely based on that library's C++ implementation, which is released under the MIT license.
+While this project does not include any actual source code from the Nayuki's library, it is closely based on that library's C++ implementation, which is released under the MIT license.
 
 ## Financial Support
 

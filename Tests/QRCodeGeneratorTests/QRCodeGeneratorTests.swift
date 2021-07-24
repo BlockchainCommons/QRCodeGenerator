@@ -389,9 +389,9 @@ class QRTestTests: XCTestCase {
     
     func testSegment2() throws {
         // Illustration "golden"
-        let golden0 = "Golden ratio φ = 1.";
-        let golden1 = "6180339887498948482045868343656381177203091798057628621354486227052604628189024497072072041893911374";
-        let golden2 = "......";
+        let golden0 = "Golden ratio φ = 1."
+        let golden1 = "6180339887498948482045868343656381177203091798057628621354486227052604628189024497072072041893911374"
+        let golden2 = "......"
         let qr = try QRCode.encode(text: golden0 + golden1 + golden2, correctionLevel: .low)
         let expected =
         """
