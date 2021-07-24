@@ -131,15 +131,15 @@ public struct QRCode {
     }
     
     #if canImport(SwiftUI)
-    #if canImport(AppKit)
-    @available(macOS 10.15, *)
-    public func image(border: Int = 3, moduleSize: Int = 1, foregroundColor: OSColor = .black, backgroundColor: OSColor = .white) -> Image {
-        Image(nsImage: makeImage(border: border, moduleSize: moduleSize, foregroundColor: foregroundColor, backgroundColor: backgroundColor)).interpolation(.none)
-    }
-    #elseif canImport(UIKit)
+    #if canImport(UIKit)
     @available(iOS 13.0, *)
     public func image(border: Int = 3, moduleSize: Int = 1, foregroundColor: OSColor = .black, backgroundColor: OSColor = .white) -> Image {
         Image(uiImage: makeImage(border: border, moduleSize: moduleSize, foregroundColor: foregroundColor, backgroundColor: backgroundColor)).interpolation(.none)
+    }
+    #elseif canImport(AppKit)
+    @available(macOS 10.15, *)
+    public func image(border: Int = 3, moduleSize: Int = 1, foregroundColor: OSColor = .black, backgroundColor: OSColor = .white) -> Image {
+        Image(nsImage: makeImage(border: border, moduleSize: moduleSize, foregroundColor: foregroundColor, backgroundColor: backgroundColor)).interpolation(.none)
     }
     #endif
     #endif
