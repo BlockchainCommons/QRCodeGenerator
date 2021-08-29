@@ -239,7 +239,7 @@ public struct Segment {
     
     static let unicodeToQRKanji: [Int16] = {
         var result = [Int16](repeating: -1, count: 1 << 16)
-        let bytes = Data(base64Encoded: packedQRKangiToUnicode)!
+        let bytes = Data(base64Encoded: packedQRKanjiToUnicode)!
         for i in stride(from: 0, to: bytes.count, by: 2) {
             let c = ((UInt16(bytes[i]) & 0xff) << 8) | (UInt16(bytes[i + 1]) & 0xff)
             guard c != 0xffff else {
@@ -350,6 +350,8 @@ public struct Segment {
         return result
     }
     
+    // MARK: - Optimal Segmentation
+
     /**
      * Returns a list of zero or more segments to represent the specified Unicode text string.
      * The resulting list optimally minimizes the total encoded bit length, subjected to the constraints
