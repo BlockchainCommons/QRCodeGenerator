@@ -8,7 +8,7 @@ See the [QRCodeGeneratorDemo](https://github.com/BlockchainCommons/QRCodeGenerat
 
 ## Why Another QR Code Generator?
 
-The QR code standard provides for QR codes to be composed of a heterogenous sequence of "segments," each of which is optimized for encoding different sorts of data, and each of which requires a different number of bits per character to encode. Therefore, choosing which segment type (or series of segment types) to use for efficient encoding is important.
+The QR code standard provides for QR codes to be composed of a heterogenous sequence of "segments," each of which is optimized for encoding different sorts of data, and each requiring a different number of bits per character to encode. Therefore, choosing which segment type (or series of segment types) to use for efficient encoding is important.
 
 | Segment Type | Bits Per Character | Character Set |
 | :---  | :---  | :--- |
@@ -21,17 +21,17 @@ Many QR code generators, including the one built into iOS and macOS, take an und
 
 The [Blockchain Commons UR standard](https://github.com/BlockchainCommons/Research/blob/master/papers/bcr-2020-005-ur.md) is designed to be compatible with the `alphanumeric` segment encoding node: URs are case-insensitive, and when a UR is transformed to upper case, it always is encodable in the `alphanumeric` mode. This results in an efficient encoding and therefore a less-dense QR code.
 
-However, not all formats are this straightforward. For example the data for the [SMART Health Card (SHC)](https://smarthealth.cards/) format is a URI that starts `shc:/` followed by often over a thousand numeric digits. The first five characters require the `bytes` encoding mode, while the following digits would be most efficiently encoded using the `numeric` mode. But if only one segment type can be selected, then it must be the `bytes` node. For the SHC format, this results in a much denser QR code that requires more screen resolution to display and higher quality cameras to read. The solution is to encode the data as two segments: the first encoding the header using the `bytes` mode, and the second with the body using the `numeric` mode.
+However, not all formats are this straightforward. For example the data for the [SMART Health Card (SHC)](https://smarthealth.cards/) format is a URI that starts `shc:/` followed by often over a thousand numeric digits. The first five characters require the `bytes` encoding mode, while the following digits would be most efficiently encoded using the `numeric` mode. But if only one segment type can be selected, then it must be the `bytes` mode. For the SHC format, this results in a much denser QR code that requires more screen resolution to display and higher quality cameras to read. The solution is to encode the data as two segments: the first encoding the header using the `bytes` mode, and the second with the body using the `numeric` mode.
 
-It important to understand that no matter how many segments of any time used to create a QR code, all QR code readers are capable of reading them. So which segments to use is strictly a matter for the encoder to decide: the decoder always sees a scanned QR code as a string of UTF-8 bytes.
+It important to understand that no matter how many segments of any kind are used to create a QR code, all QR code readers are capable of reading them. So which segments to use is strictly a matter for the encoder to decide: the decoder always sees a scanned QR code as a string of UTF-8 bytes.
 
-So for certain data types, the QR code generator built into iOS and macOS will have less than efficient results. This QRCodeGenerator package allows you to automatically pick a segment type as the built-in generator does, or specify a sequence of segments, giving you control over encoding efficiency over all the segments.
+So for certain data types, the QR code generator built into iOS and macOS will have less than efficient results. This QRCodeGenerator package allows you to automatically pick a segment type as the built-in generator does, or specify a sequence of segments, giving you control of encoding efficiency over all the segments.
 
-If you know the most efficient encoding for a data format in advance you can manually specify a series of segments. But QRCodeGenerator also includes "optimal encoding" functions that search for and discover not a *single* segment type, but a *sequence* of most-efficient segment types. The use of this optimal encoding is optional because it does take a bit more processing power to search the space of possible segment encoding types to arrive at the optimal one.
+If you know the most efficient encoding for a data format in advance, you can manually specify a series of segments. But QRCodeGenerator also includes "optimal encoding" functions that search for and discover not a *single* segment type, but a *sequence* of most-efficient segment types. The use of this optimal encoding is optional because it does take a bit more processing power to search the space of possible segment encoding types to arrive at the optimal one.
 
 The ability to manually specify a sequence of segment types, or to have the package pick an optimal one automatically are the major advantages that QRCodeGenerator has over the built-in generator.
 
-As an example, the following Chinese string includes a variety of types of characters:
+As an example: the following Chinese string includes a variety of types of characters:
 
 ```
 維基百科（Wikipedia，聆聽i/ˌwɪkᵻˈpiːdi.ə/）是一個自由內容、公開編輯且多語言的網路百科全書協作計畫
@@ -59,7 +59,7 @@ This totals to 735 bits, a 48% savings.
 
 ## Status - Release
 
-QRCodeGenerator is a translation of the [Nayuki's library](https://www.nayuki.io/page/qr-code-generator-library). Its unit tests verify that it produces the exact same QR codes as those produced in the original source demo app. The maintainers believe this release to be stable and useful.
+QRCodeGenerator is a translation of [Nayuki's library](https://www.nayuki.io/page/qr-code-generator-library). Its unit tests verify that it produces the exact same QR codes as those produced in the original source demo app. The maintainers believe this release to be stable and useful.
 
 ## Prerequisites
 
