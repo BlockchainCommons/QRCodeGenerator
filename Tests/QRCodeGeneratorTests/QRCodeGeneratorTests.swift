@@ -597,7 +597,7 @@ class QRTestTests: XCTestCase {
         // Project Nayuki URL
         let segs0 = try Segment.makeSegments(text: "https://www.nayuki.io/")
 
-        let qr = try QRCode.encode(segments: segs0, correctionLevel: .high, mask: -1)  // Automatic mask
+        let qr = try QRCode.encode(segments: segs0, correctionLevel: .high, mask: nil)  // Automatic mask
         let expected =
         """
         ⬛️⬛️⬛️⬛️⬛️⬛️⬛️⬜️⬜️⬛️⬜️⬜️⬛️⬛️⬛️⬜️⬛️⬜️⬛️⬛️⬜️⬜️⬛️⬛️⬛️⬛️⬛️⬛️⬛️
@@ -896,5 +896,51 @@ class QRTestTests: XCTestCase {
         ⬛️⬛️⬛️⬛️⬛️⬛️⬛️⬜️⬛️⬜️⬛️⬜️⬜️⬜️⬛️⬜️⬜️⬛️⬜️⬜️⬜️⬛️⬜️⬛️⬛️⬛️⬛️⬜️⬜️⬛️⬛️⬜️⬜️⬛️⬛️⬜️⬜️⬛️⬜️⬜️⬛️⬜️⬜️⬛️⬛️⬛️⬜️⬛️⬛️
         """
         XCTAssertEqual(qr7.emojiString, expected7)
+    }
+    
+    func testOptimal1() throws {
+        try XCTAssertEqual(Segment.makeSegmentsOptimally(text: "12345").description, "[Segment(mode: numeric, characterCount: 5, data: <17 bits>)]")
+        try XCTAssertEqual(Segment.makeSegmentsOptimally(text: "ABC123").description, "[Segment(mode: alphanumeric, characterCount: 6, data: <33 bits>)]")
+        try XCTAssertEqual(Segment.makeSegmentsOptimally(text: "Hello").description, "[Segment(mode: byte, characterCount: 5, data: <40 bits>)]")
+        try XCTAssertEqual(Segment.makeSegmentsOptimally(text: "鉄狼").description, "[Segment(mode: kanji, characterCount: 2, data: <26 bits>)]")
+    }
+    
+    func testOptimal2() throws {
+        try XCTAssertEqual(Segment.makeSegmentsOptimally(text: "12345678901234567890ABC123").description, "[Segment(mode: numeric, characterCount: 20, data: <67 bits>), Segment(mode: alphanumeric, characterCount: 6, data: <33 bits>)]")
+        try XCTAssertEqual(Segment.makeSegmentsOptimally(text: "ABC123鉄狼").description, "[Segment(mode: alphanumeric, characterCount: 6, data: <33 bits>), Segment(mode: kanji, characterCount: 2, data: <26 bits>)]")
+        try XCTAssertEqual(Segment.makeSegmentsOptimally(text: "ABC123?鉄狼").description, "[Segment(mode: alphanumeric, characterCount: 6, data: <33 bits>), Segment(mode: byte, characterCount: 1, data: <8 bits>), Segment(mode: kanji, characterCount: 2, data: <26 bits>)]")
+        try XCTAssertEqual(Segment.makeSegmentsOptimally(text: "1234567890ABC123鉄狼Hello").description, "[Segment(mode: numeric, characterCount: 10, data: <34 bits>), Segment(mode: alphanumeric, characterCount: 6, data: <33 bits>), Segment(mode: kanji, characterCount: 2, data: <26 bits>), Segment(mode: byte, characterCount: 5, data: <40 bits>)]")
+        try XCTAssertEqual(Segment.makeSegmentsOptimally(text: "私の名前はウルフ「ABC123」です。").description, "[Segment(mode: kanji, characterCount: 9, data: <117 bits>), Segment(mode: alphanumeric, characterCount: 6, data: <33 bits>), Segment(mode: kanji, characterCount: 4, data: <52 bits>)]")
+    }
+    
+    func testOptimal3() throws {
+        try XCTAssertEqual(Segment.makeSegmentsOptimally(text: "「魔法少女まどか☆マギカ」って、　ИАИ　ｄｅｓｕ　κα？").description, "[Segment(mode: kanji, characterCount: 29, data: <377 bits>)]")
+        try XCTAssertEqual(Segment.makeKanji(text: "「魔法少女まどか☆マギカ」って、　ИАИ　ｄｅｓｕ　κα？").description, "Segment(mode: kanji, characterCount: 29, data: <377 bits>)")
+    }
+    
+    func testOptimal4() throws {
+        let golden0 = "Golden ratio φ = 1."
+        let golden1 = "6180339887498948482045868343656381177203091798057628621354486227052604628189024497072072041893911374"
+        let golden2 = "......"
+        
+        let golden = golden0 + golden1 + golden2
+
+        try XCTAssertEqual(Segment.makeSegmentsOptimally(text: golden).description, "[Segment(mode: byte, characterCount: 20, data: <160 bits>), Segment(mode: numeric, characterCount: 100, data: <334 bits>), Segment(mode: alphanumeric, characterCount: 6, data: <33 bits>)]")
+    }
+    
+    func testOptimal5() throws {
+        let s = "維基百科（Wikipedia，聆聽i/ˌwɪkᵻˈpiːdi.ə/）是一個自由內容、公開編輯且多語言的網路百科全書協作計畫"
+
+        let segment = try Segment.makeBytes(data: s)
+        XCTAssertEqual(segment.description, "Segment(mode: byte, characterCount: 140, data: <1120 bits>)")
+
+        let bits = segment.data.count
+        XCTAssertEqual(bits, 1120)
+
+        let optimalSegments = try Segment.makeSegmentsOptimally(text: s)
+        XCTAssertEqual(optimalSegments.description, "[Segment(mode: kanji, characterCount: 5, data: <65 bits>), Segment(mode: byte, characterCount: 9, data: <72 bits>), Segment(mode: kanji, characterCount: 3, data: <39 bits>), Segment(mode: byte, characterCount: 23, data: <184 bits>), Segment(mode: kanji, characterCount: 6, data: <78 bits>), Segment(mode: byte, characterCount: 3, data: <24 bits>), Segment(mode: kanji, characterCount: 21, data: <273 bits>)]")
+
+        let optimalBits = optimalSegments.reduce(into: 0, { $0 += $1.data.count })
+        XCTAssertEqual(optimalBits, 735)
     }
 }

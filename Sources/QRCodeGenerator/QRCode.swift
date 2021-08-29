@@ -57,9 +57,9 @@ public struct QRCode {
     public let correctionLevel: CorrectionLevel
     
     /** The index of the mask pattern used in this QR Code, which is between 0 and 7 (inclusive).
-     * Even if a QR Code is created with automatic masking requested (mask = -1),
+     * Even if a QR Code is created with automatic masking requested (mask = nil),
      * the resulting object still has a mask value between 0 and 7. */
-    public private(set) var mask: Int
+    public private(set) var mask: Int?
     
     /// The modules of this QR Code (false = white, true = black).
     public subscript(_ x: Int, _ y: Int) -> Bool {
@@ -132,8 +132,13 @@ public struct QRCode {
      * QR Code version is automatically chosen for the output. The ECC level of the result may be higher than
      * the ecl argument if it can be done without increasing the version.
      */
-    public static func encode(text: String, correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, mask: Int = -1, boostEcl: Bool = true) throws -> QRCode {
-        let segs = try Segment.makeSegments(text: text)
+    public static func encode(text: String, correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, mask: Int? = nil, boostEcl: Bool = true, optimize: Bool = false) throws -> QRCode {
+        let segs: [Segment]
+        if optimize {
+            segs = try Segment.makeSegmentsOptimally(text: text, correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion)
+        } else {
+            segs = try Segment.makeSegments(text: text)
+        }
         return try encode(segments: segs, correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion, mask: mask, boostEcl: boostEcl)
     }
     
@@ -143,28 +148,27 @@ public struct QRCode {
      * bytes allowed is 2953. The smallest possible QR Code version is automatically chosen for the output.
      * The ECC level of the result may be higher than the ecl argument if it can be done without increasing the version.
      */
-    public static func encode(data: [UInt8], correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, mask: Int = -1, boostEcl: Bool = true) throws -> QRCode {
+    public static func encode(data: [UInt8], correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, mask: Int? = nil, boostEcl: Bool = true) throws -> QRCode {
         let segs = try Segment.makeBytes(data: data)
         return try encode(segments: [segs], correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion, mask: mask, boostEcl: boostEcl)
     }
 
     // MARK: - Static factory functions (mid level)
-
+    
     /**
      * Returns a QR Code representing the given segments with the given encoding parameters.
      * The smallest possible QR Code version within the given range is automatically
      * chosen for the output. Iff boostEcl is true, then the ECC level of the result
      * may be higher than the ecl argument if it can be done without increasing the
      * version. The mask number is either between 0 to 7 (inclusive) to force that
-     * mask, or -1 to automatically choose an appropriate mask (which may be slow).
+     * mask, or `nil` to automatically choose an appropriate mask (which may be slow).
      * This function allows the user to create a custom sequence of segments that switches
      * between modes (such as alphanumeric and byte) to encode text in less space.
      * This is a mid-level API; the high-level API is encodeText() and encodeBinary().
      */
-    public static func encode(segments: [Segment], correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, mask: Int = -1, boostEcl: Bool = true) throws -> QRCode {
-        guard [minVersion, maxVersion].allSatisfy({ (Self.minVersion...Self.maxVersion).contains($0) }) else {
-            throw QRError.invalidVersion
-        }
+    public static func encode(segments: [Segment], correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, mask: Int? = nil, boostEcl: Bool = true) throws -> QRCode {
+        try checkVersion(minVersion: minVersion, maxVersion: maxVersion)
+
         // Find the minimal version number to use
         var version = minVersion
         var dataUsedBits = -1
@@ -175,7 +179,7 @@ public struct QRCode {
                 break  // This version number is found to be suitable
             }
             if version >= maxVersion {  // All versions in the range could not fit the given data
-                throw QRError.segmentTooLong(dataUsedBits, dataCapacityBits)
+                throw QRError.dataTooLong(dataUsedBits, dataCapacityBits)
             }
             
             version += 1
@@ -220,9 +224,15 @@ public struct QRCode {
         }
         
         // Create the QR Code object
-        return try QRCode(version: version, correctionLevel: ecl, dataCodewords: dataCodewords, msk: mask)
+        return try QRCode(version: version, correctionLevel: ecl, dataCodewords: dataCodewords, mask: mask)
     }
     
+    static func checkVersion(minVersion: Int, maxVersion: Int) throws {
+        guard [minVersion, maxVersion].allSatisfy({ (Self.minVersion...Self.maxVersion).contains($0) }) else {
+            throw QRError.invalidVersion
+        }
+    }
+
     // MARK: - Constructor (low level)
     
     /**
@@ -231,15 +241,15 @@ public struct QRCode {
      * This is a low-level API that most users should not use directly.
      * A mid-level API is the encodeSegments() function.
      */
-    public init(version: Int, correctionLevel: CorrectionLevel = .medium, dataCodewords: [UInt8], msk: Int) throws {
+    public init(version: Int, correctionLevel: CorrectionLevel = .medium, dataCodewords: [UInt8], mask: Int?) throws {
         self.version = version
         self.correctionLevel = correctionLevel
-        self.mask = -1
+        self.mask = nil
         
         guard (Self.minVersion...Self.maxVersion).contains(version) else {
             throw QRError.invalidVersion
         }
-        guard (-1...7).contains(msk) else {
+        guard mask == nil || (0...7).contains(mask!) else {
             throw QRError.invalidMask
         }
         self.size = version * 4 + 17
@@ -252,24 +262,24 @@ public struct QRCode {
         drawCodewords(allCodewords)
         
         // Do masking
-        var msk = msk
-        if msk == -1 {  // Automatically choose best mask
+        var mask: Int! = mask
+        if mask == nil {  // Automatically choose best mask
             var minPenalty = Int.max
             for i in 0 ..< 8 {
                 applyMask(i)
                 drawFormatBits(i)
                 let penalty = getPenaltyScore()
                 if penalty < minPenalty {
-                    msk = i
+                    mask = i
                     minPenalty = penalty
                 }
                 applyMask(i)  // Undoes the mask due to XOR
             }
         }
-        precondition((0...7).contains(msk))
-        self.mask = msk
-        applyMask(msk)  // Apply the final choice of mask
-        drawFormatBits(msk)  // Overwrite old format bits
+        precondition((0...7).contains(mask))
+        self.mask = mask
+        applyMask(mask)  // Apply the final choice of mask
+        drawFormatBits(mask)  // Overwrite old format bits
         
         isFunction.removeAll()
     }
@@ -295,7 +305,7 @@ public struct QRCode {
         for i in 0 ..< numAlign {
             for j in 0 ..< numAlign {
                 // Don't draw on the three finder corners
-                if (!((i == 0 && j == 0) || (i == 0 && j == numAlign - 1) || (i == numAlign - 1 && j == 0))) {
+                if !((i == 0 && j == 0) || (i == 0 && j == numAlign - 1) || (i == numAlign - 1 && j == 0)) {
                     drawAlignmentPattern(alignPatPos[i], alignPatPos[j])
                 }
             }
@@ -636,7 +646,7 @@ public struct QRCode {
     /// Returns the number of 8-bit data (i.e. not error correction) codewords contained in any
     /// QR Code of the given version number and error correction level, with remainder bits discarded.
     /// This stateless pure function could be implemented as a (40*4)-cell lookup table.
-    private static func getNumDataCodewords(_ ver: Int, _ ecl: CorrectionLevel) -> Int {
+    static func getNumDataCodewords(_ ver: Int, _ ecl: CorrectionLevel) -> Int {
         getNumRawDataModules(ver) / 8
             - eccCodewordsPerBlock[ecl.rawValue][ver]
             * numErrorCorrectionBlocks[ecl.rawValue][ver]

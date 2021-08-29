@@ -19,10 +19,10 @@ public enum QRError: LocalizedError {
     case invalidMask
     case invalidNumericString
     case invalidAlphanumericString
+    case invalidKanjiString
     case invalidECIDesignator
     case invalidCharacterCount
-    case dataTooLong
-    case segmentTooLong(Int, Int)
+    case dataTooLong(Int, Int)
     
     public var errorDescription: String? {
         switch self {
@@ -34,19 +34,16 @@ public enum QRError: LocalizedError {
             return "String contains non-numeric characters."
         case .invalidAlphanumericString:
             return "String contains unencodable characters in alphanumeric mode."
+        case .invalidKanjiString:
+            return "String contains non-kanji-mode characters."
         case .invalidECIDesignator:
             return "Invalid ECI designator."
         case .invalidCharacterCount:
             return "Invalid number of characters."
-        case .dataTooLong:
-            return "Data too long."
-        case .segmentTooLong(let dataUsedBits, let dataCapacityBits):
-            var sb = ""
-            if (dataUsedBits == -1) {
-                sb += "Segment too long"
-            } else {
-                sb += "Data length = \(dataUsedBits) bits, "
-                sb += "Max capacity = \(dataCapacityBits) bits"
+        case .dataTooLong(let dataUsedBits, let dataCapacityBits):
+            var sb = "Data too long."
+            if dataUsedBits != -1 {
+                sb += " Data length = \(dataUsedBits) bits, Max capacity = \(dataCapacityBits) bits."
             }
             return sb
         }
