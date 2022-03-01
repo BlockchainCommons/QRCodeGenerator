@@ -99,6 +99,16 @@ public struct Segment {
     public static func makeBytes(data: String) throws -> Segment {
         return try makeBytes(data: data.data(using: .utf8)!)
     }
+    
+    public static func makeText(text: String, correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, optimize: Bool = false) throws -> [Segment] {
+        let segments: [Segment]
+        if optimize {
+            segments = try Segment.makeSegmentsOptimally(text: text, correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion)
+        } else {
+            segments = try Segment.makeSegments(text: text)
+        }
+        return segments
+    }
 
     /**
      * Returns a segment representing the given string of decimal digits encoded in numeric mode.
@@ -379,7 +389,7 @@ public struct Segment {
             precondition(segs != nil)
             
             // Check if the segments fit
-            let dataCapacityBits = QRCode.getNumDataCodewords(version, correctionLevel) * 8
+            let dataCapacityBits = QRCode.dataCapacityBits(version, correctionLevel)
             let dataUsedBits = Segment.getTotalBits(segs, version)
             if dataUsedBits != -1 && dataUsedBits <= dataCapacityBits {
                 return segs  // This version number is found to be suitable

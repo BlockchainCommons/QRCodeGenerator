@@ -45,20 +45,16 @@ public struct QRCode {
     
     // Immutable scalar parameters:
     
-    /** The version number of this QR Code, which is between 1 and 40 (inclusive).
-     * This determines the size of this barcode. */
+    /// The version number of this QR Code, which is between 1 and 40 (inclusive). This determines the size of this barcode.
     public let version: Int
     
-    /** The width and height of this QR Code, measured in modules, between
-     * 21 and 177 (inclusive). This is equal to version * 4 + 17. */
+    /// The width and height of this QR Code, measured in modules, between 21 and 177 (inclusive). This is equal to version * 4 + 17.
     public let size: Int
     
-    /** The error correction level used in this QR Code. */
+    /// The error correction level used in this QR Code.
     public let correctionLevel: CorrectionLevel
-    
-    /** The index of the mask pattern used in this QR Code, which is between 0 and 7 (inclusive).
-     * Even if a QR Code is created with automatic masking requested (mask = nil),
-     * the resulting object still has a mask value between 0 and 7. */
+
+    /// The index of the mask pattern used in this QR Code, which is between 0 and 7 (inclusive). Even if a QR Code is created with automatic masking requested (mask = nil), the resulting object still has a mask value between 0 and 7.
     public private(set) var mask: Int?
     
     /// The modules of this QR Code (false = white, true = black).
@@ -133,15 +129,15 @@ public struct QRCode {
      * the ecl argument if it can be done without increasing the version.
      */
     public static func encode(text: String, correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, mask: Int? = nil, boostEcl: Bool = true, optimize: Bool = false) throws -> QRCode {
-        let segs: [Segment]
-        if optimize {
-            segs = try Segment.makeSegmentsOptimally(text: text, correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion)
-        } else {
-            segs = try Segment.makeSegments(text: text)
-        }
-        return try encode(segments: segs, correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion, mask: mask, boostEcl: boostEcl)
+        let segments = try Segment.makeText(text: text, correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion, optimize: optimize)
+        return try encode(segments: segments, correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion, mask: mask, boostEcl: boostEcl)
     }
-    
+
+    public static func getInfo(text: String, correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, optimize: Bool = false) throws -> Info {
+        let segments = try Segment.makeText(text: text, correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion, optimize: optimize)
+        return try Self.getInfo(segments: segments)
+    }
+
     /**
      * Returns a QR Code representing the given binary data at the given error correction level.
      * This function always encodes using the binary segment mode, not any text mode. The maximum number of
@@ -149,11 +145,52 @@ public struct QRCode {
      * The ECC level of the result may be higher than the ecl argument if it can be done without increasing the version.
      */
     public static func encode(data: [UInt8], correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, mask: Int? = nil, boostEcl: Bool = true) throws -> QRCode {
-        let segs = try Segment.makeBytes(data: data)
-        return try encode(segments: [segs], correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion, mask: mask, boostEcl: boostEcl)
+        let segment = try Segment.makeBytes(data: data)
+        return try encode(segments: [segment], correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion, mask: mask, boostEcl: boostEcl)
+    }
+
+    public static func getInfo(data: [UInt8], correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40) throws -> Info {
+        let segment = try Segment.makeBytes(data: data)
+        return try Self.getInfo(segments: [segment])
     }
 
     // MARK: - Static factory functions (mid level)
+    
+    public static func dataCapacityBits(_ version: Int, _ correctionLevel: CorrectionLevel = .medium) -> Int {
+        getNumDataCodewords(version, correctionLevel) * 8
+    }
+    
+    public struct Info {
+        public let version: Int
+        public let size: Int
+        public let correctionLevel: CorrectionLevel
+        public let dataUsedBits: Int
+        public let dataCapacityBits: Int
+    }
+    
+    public static func getInfo(segments: [Segment], correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40) throws -> Info {
+        try checkVersion(minVersion: minVersion, maxVersion: maxVersion)
+
+        // Find the minimal version number to use
+        var version = minVersion
+        var capacityBits = -1
+        var usedBits = -1
+        while true {
+            capacityBits = Self.dataCapacityBits(version, correctionLevel)  // Number of data bits available
+            usedBits = Segment.getTotalBits(segments, version)
+            if usedBits != -1 && usedBits <= capacityBits {
+                break  // This version number is found to be suitable
+            }
+            if version >= maxVersion {  // All versions in the range could not fit the given data
+                throw QRError.dataTooLong(usedBits, capacityBits)
+            }
+            
+            version += 1
+        }
+        precondition(usedBits != -1)
+        
+        return Info(version: version, size: version * 4 + 17, correctionLevel: correctionLevel, dataUsedBits: usedBits, dataCapacityBits: capacityBits)
+    }
     
     /**
      * Returns a QR Code representing the given segments with the given encoding parameters.
@@ -167,29 +204,15 @@ public struct QRCode {
      * This is a mid-level API; the high-level API is encodeText() and encodeBinary().
      */
     public static func encode(segments: [Segment], correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, mask: Int? = nil, boostEcl: Bool = true) throws -> QRCode {
-        try checkVersion(minVersion: minVersion, maxVersion: maxVersion)
+        let info = try Self.getInfo(segments: segments, correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion)
 
-        // Find the minimal version number to use
-        var version = minVersion
-        var dataUsedBits = -1
-        while true {
-            let dataCapacityBits = Self.getNumDataCodewords(version, correctionLevel) * 8  // Number of data bits available
-            dataUsedBits = Segment.getTotalBits(segments, version)
-            if dataUsedBits != -1 && dataUsedBits <= dataCapacityBits {
-                break  // This version number is found to be suitable
-            }
-            if version >= maxVersion {  // All versions in the range could not fit the given data
-                throw QRError.dataTooLong(dataUsedBits, dataCapacityBits)
-            }
-            
-            version += 1
-        }
-        precondition(dataUsedBits != -1)
+        let dataUsedBits = info.dataUsedBits
+        let version = info.version
         
         // Increase the error correction level while the data still fits in the current version number
         var ecl = correctionLevel
         for newEcl in [CorrectionLevel.medium, CorrectionLevel.quartile, CorrectionLevel.high] { // From low to high
-            if boostEcl && dataUsedBits <= getNumDataCodewords(version, newEcl) * 8 {
+            if boostEcl && dataUsedBits <= Self.dataCapacityBits(version, newEcl) {
                 ecl = newEcl
             }
         }
@@ -204,7 +227,7 @@ public struct QRCode {
         precondition(bb.count == dataUsedBits)
         
         // Add terminator and pad up to a byte if applicable
-        let dataCapacityBits = getNumDataCodewords(version, ecl) * 8
+        let dataCapacityBits = Self.dataCapacityBits(version, ecl)
         precondition(bb.count <= dataCapacityBits)
         bb.appendBits(0, min(4, dataCapacityBits - bb.count))
         bb.appendBits(0, (8 - bb.count % 8) % 8)
