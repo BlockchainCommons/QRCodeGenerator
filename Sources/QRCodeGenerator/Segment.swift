@@ -280,25 +280,19 @@ public struct Segment {
     }
 
     /**
-     * Returns a list of zero, one or two segments to represent the given text string. With
-     * `strictEncoding` enabled, the result will contain a byte segment with the text encoded
-     * in either ISO-8859-1 (Latin-1) if possible or in UTF-8 if otherwise. In both cases,
-     * an ECI segment will be prepended indicating the used encoding. Without `strictEncoding`,
-     * the result will be a single byte segment with UTF-8 encoded data.
+     * Returns a list of zero, one or two segments to represent the given text string. The
+     * string will be encoded in a byte segment using UTF-8 and if `strictEncoding` is enabled,
+     * the result will also start with an ECI segment indicating the deviation from the standard
+     * ISO-8859-1 (Latin-1) encoding.
      */
     public static func makeSegments(byteEncodedText text: String, strictEncoding: Bool = false) throws -> [Segment] {
         var result: [Segment] = []
         if text.isEmpty {
             // Leave result empty
-        } else if strictEncoding {
-            if let latin1Data = text.data(using: .isoLatin1) {
-                try result.append(makeECI(designator: 3))
-                try result.append(makeBytes(data: latin1Data))
-            } else {
-                try result.append(makeECI(designator: 26))
-                try result.append(makeBytes(data: Array(text.utf8)))
-            }
         } else {
+            if strictEncoding {
+                try result.append(makeECI(designator: 26))
+            }
             try result.append(makeBytes(data: Array(text.utf8)))
         }
         return result
@@ -392,7 +386,7 @@ public struct Segment {
      * The resulting list optimally minimizes the total encoded bit length, subjected to the constraints
      * in the specified {error correction level, minimum version number, maximum version number}.
      *
-     * This function can utilize all four text encoding modes: numeric, alphanumeric, byte (Latin-1 or UTF-8),
+     * This function can utilize all four text encoding modes: numeric, alphanumeric, byte (UTF-8),
      * and kanji. This can be considered as a sophisticated but slower replacement for
      * `makeSegments()`. This requires more input parameters because it searches a
      * range of versions, like `QRCode.encode(segments:correctionLevel:minVersion:maxVersion:mask:booscEcl:)`.
