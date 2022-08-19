@@ -100,12 +100,12 @@ public struct Segment {
         return try makeBytes(data: data.data(using: .utf8)!)
     }
     
-    public static func makeText(text: String, correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, optimize: Bool = false) throws -> [Segment] {
+    public static func makeText(text: String, correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, optimize: Bool = false, strictEncoding: Bool = false) throws -> [Segment] {
         let segments: [Segment]
         if optimize {
-            segments = try Segment.makeSegmentsOptimally(text: text, correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion)
+            segments = try Segment.makeSegmentsOptimally(text: text, correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion, strictEncoding: strictEncoding)
         } else {
-            segments = try Segment.makeSegments(text: text)
+            segments = try Segment.makeSegments(text: text, strictEncoding: strictEncoding)
         }
         return segments
     }
@@ -265,7 +265,7 @@ public struct Segment {
      * Returns a list of zero or more segments to represent the given text string. The result
      * may use various segment modes and switch modes to optimize the length of the bit stream.
      */
-    public static func makeSegments(text: String) throws -> [Segment] {
+    public static func makeSegments(text: String, strictEncoding: Bool = false) throws -> [Segment] {
         var result: [Segment] = []
         if text.isEmpty {
             // Leave result empty
@@ -273,6 +273,30 @@ public struct Segment {
             try result.append(makeNumeric(digits: text))
         } else if isAlphanumeric(text: text) {
             try result.append(makeAlphanumeric(text: text))
+        } else {
+            try result.append(contentsOf: makeSegments(byteEncodedText: text, strictEncoding: strictEncoding))
+        }
+        return result
+    }
+
+    /**
+     * Returns a list of zero, one or two segments to represent the given text string. With
+     * `strictEncoding` enabled, the result will contain a byte segment with the text encoded
+     * in either ISO-8859-1 (Latin-1) if possible or in UTF-8 with an ECI segment prepended
+     * indicating the deviation from the standard encoding. Without `strictEncoding`, the
+     * result will be a single byte segment with UTF-8 encoded data.
+     */
+    public static func makeSegments(byteEncodedText text: String, strictEncoding: Bool = false) throws -> [Segment] {
+        var result: [Segment] = []
+        if text.isEmpty {
+            // Leave result empty
+        } else if strictEncoding {
+            if let latin1Data = text.data(using: .isoLatin1) {
+                try result.append(makeBytes(data: latin1Data))
+            } else {
+                try result.append(makeECI(designator: 26))
+                try result.append(makeBytes(data: Array(text.utf8)))
+            }
         } else {
             try result.append(makeBytes(data: Array(text.utf8)))
         }
@@ -367,12 +391,12 @@ public struct Segment {
      * The resulting list optimally minimizes the total encoded bit length, subjected to the constraints
      * in the specified {error correction level, minimum version number, maximum version number}.
      *
-     * This function can utilize all four text encoding modes: numeric, alphanumeric, byte (UTF-8),
+     * This function can utilize all four text encoding modes: numeric, alphanumeric, byte (Latin-1 or UTF-8),
      * and kanji. This can be considered as a sophisticated but slower replacement for
      * `makeSegments()`. This requires more input parameters because it searches a
      * range of versions, like `QRCode.encode(segments:correctionLevel:minVersion:maxVersion:mask:booscEcl:)`.
      */
-    public static func makeSegmentsOptimally(text: String, correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40) throws -> [Segment] {
+    public static func makeSegmentsOptimally(text: String, correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, strictEncoding: Bool = false) throws -> [Segment] {
         try QRCode.checkVersion(minVersion: minVersion, maxVersion: maxVersion)
         
         // Iterate through version numbers, and make tentative segments
@@ -384,7 +408,7 @@ public struct Segment {
                 version += 1
             }
             if version == minVersion || version == 10 || version == 27 {
-                segs = makeSegmentsOptimally(codePoints: codePoints, version: version)
+                segs = makeSegmentsOptimally(codePoints: codePoints, version: version, strictEncoding: strictEncoding)
             }
             precondition(segs != nil)
             
@@ -401,12 +425,12 @@ public struct Segment {
     }
 
     /// Returns a new list of segments that is optimal for the given text at the given version number.
-    static func makeSegmentsOptimally(codePoints: [UnicodeScalar], version: Int) -> [Segment] {
+    static func makeSegmentsOptimally(codePoints: [UnicodeScalar], version: Int, strictEncoding: Bool) -> [Segment] {
         guard !codePoints.isEmpty else {
             return []
         }
         let charModes = computeCharacterModes(codePoints: codePoints, version: version)
-        return splitIntoSegments(codePoints: codePoints, charModes: charModes)
+        return splitIntoSegments(codePoints: codePoints, charModes: charModes, strictEncoding: strictEncoding)
     }
     
     /// Returns a new array representing the optimal mode per code point based on the given text and version.
@@ -498,7 +522,7 @@ public struct Segment {
     
     // Returns a new list of segments based on the given text and modes, such that
     // consecutive code points in the same mode are put into the same segment.
-    static func splitIntoSegments(codePoints: [UnicodeScalar], charModes: [Mode]) -> [Segment] {
+    static func splitIntoSegments(codePoints: [UnicodeScalar], charModes: [Mode], strictEncoding: Bool) -> [Segment] {
         precondition(!codePoints.isEmpty)
         var result: [Segment] = []
         
@@ -516,7 +540,7 @@ public struct Segment {
             let s = String(String.UnicodeScalarView(codePoints[start ..< i]))
             switch curMode {
             case .byte:
-                try! result.append(makeBytes(data: Array(s.utf8)))
+                try! result.append(contentsOf: makeSegments(byteEncodedText: s, strictEncoding: strictEncoding))
             case .numeric:
                 try! result.append(makeNumeric(digits: s))
             case .alphanumeric:

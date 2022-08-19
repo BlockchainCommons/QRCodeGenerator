@@ -128,13 +128,13 @@ public struct QRCode {
      * QR Code version is automatically chosen for the output. The ECC level of the result may be higher than
      * the ecl argument if it can be done without increasing the version.
      */
-    public static func encode(text: String, correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, mask: Int? = nil, boostEcl: Bool = true, optimize: Bool = false) throws -> QRCode {
-        let segments = try Segment.makeText(text: text, correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion, optimize: optimize)
+    public static func encode(text: String, correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, mask: Int? = nil, boostEcl: Bool = true, optimize: Bool = false, strictEncoding: Bool = false) throws -> QRCode {
+        let segments = try Segment.makeText(text: text, correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion, optimize: optimize, strictEncoding: strictEncoding)
         return try encode(segments: segments, correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion, mask: mask, boostEcl: boostEcl)
     }
 
-    public static func getInfo(text: String, correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, optimize: Bool = false) throws -> Info {
-        let segments = try Segment.makeText(text: text, correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion, optimize: optimize)
+    public static func getInfo(text: String, correctionLevel: CorrectionLevel = .medium, minVersion: Int = 1, maxVersion: Int = 40, optimize: Bool = false, strictEncoding: Bool = false) throws -> Info {
+        let segments = try Segment.makeText(text: text, correctionLevel: correctionLevel, minVersion: minVersion, maxVersion: maxVersion, optimize: optimize, strictEncoding: strictEncoding)
         return try Self.getInfo(segments: segments)
     }
 
