@@ -86,7 +86,7 @@ public struct QRCode {
     }
     
     #if canImport(AppKit) || canImport(UIKit)
-    public func makeImage(border: Int = 3, moduleSize: Int = 1, foregroundColor: OSColor = .black, backgroundColor: OSColor = .white) -> OSImage {
+    public func makeImage(border: Int = 3, moduleSize: Int = 1, foregroundColor: OSColor = blackOSColor, backgroundColor: OSColor = whiteOSColor) -> OSImage {
         let fullSize = size + 2 * border
         let scaledSize = fullSize * moduleSize
         let canvas = Canvas(size: IntSize(width: scaledSize, height: scaledSize))
@@ -106,12 +106,12 @@ public struct QRCode {
     #if canImport(SwiftUI)
     #if canImport(UIKit)
     @available(iOS 13.0, *)
-    public func image(border: Int = 3, moduleSize: Int = 1, foregroundColor: OSColor = .black, backgroundColor: OSColor = .white) -> Image {
+    public func image(border: Int = 3, moduleSize: Int = 1, foregroundColor: OSColor = blackOSColor, backgroundColor: OSColor = whiteOSColor) -> Image {
         Image(uiImage: makeImage(border: border, moduleSize: moduleSize, foregroundColor: foregroundColor, backgroundColor: backgroundColor)).interpolation(.none)
     }
     #elseif canImport(AppKit)
     @available(macOS 10.15, *)
-    public func image(border: Int = 3, moduleSize: Int = 1, foregroundColor: OSColor = .black, backgroundColor: OSColor = .white) -> Image {
+    public func image(border: Int = 3, moduleSize: Int = 1, foregroundColor: OSColor = blackOSColor, backgroundColor: OSColor = whiteOSColor) -> Image {
         Image(nsImage: makeImage(border: border, moduleSize: moduleSize, foregroundColor: foregroundColor, backgroundColor: backgroundColor)).interpolation(.none)
     }
     #endif
