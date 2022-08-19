@@ -282,9 +282,9 @@ public struct Segment {
     /**
      * Returns a list of zero, one or two segments to represent the given text string. With
      * `strictEncoding` enabled, the result will contain a byte segment with the text encoded
-     * in either ISO-8859-1 (Latin-1) if possible or in UTF-8 with an ECI segment prepended
-     * indicating the deviation from the standard encoding. Without `strictEncoding`, the
-     * result will be a single byte segment with UTF-8 encoded data.
+     * in either ISO-8859-1 (Latin-1) if possible or in UTF-8 if otherwise. In both cases,
+     * an ECI segment will be prepended indicating the used encoding. Without `strictEncoding`,
+     * the result will be a single byte segment with UTF-8 encoded data.
      */
     public static func makeSegments(byteEncodedText text: String, strictEncoding: Bool = false) throws -> [Segment] {
         var result: [Segment] = []
@@ -292,6 +292,7 @@ public struct Segment {
             // Leave result empty
         } else if strictEncoding {
             if let latin1Data = text.data(using: .isoLatin1) {
+                try result.append(makeECI(designator: 3))
                 try result.append(makeBytes(data: latin1Data))
             } else {
                 try result.append(makeECI(designator: 26))
