@@ -142,7 +142,11 @@ class Canvas {
         let success = color.getRed(&r, green: &g, blue: &b, alpha: &a)
         precondition(success)
         #elseif canImport(AppKit)
-        color.getRed(&r, green: &g, blue: &b, alpha: &a)
+        if let rgbColor = color.usingColorSpace(.deviceRGB) {
+            rgbColor.getRed(&r, green: &g, blue: &b, alpha: &a)
+        } else {
+            fatalError("Failed to convert to RGB color space")
+        }
         #endif
         let offset = offsetForPoint(point)
         alphaFData[offset] = Float(a)
